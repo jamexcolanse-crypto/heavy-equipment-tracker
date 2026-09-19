@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Salvador City Motorpool - Heavy Equipment Fleet & Maintenance</title>
+  <!-- Tailwind CSS CDN for utility classes -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            motorpool: {
+              blue: '#1d4ed8',
+              blueDark: '#1e40af',
+              gold: '#d97706',
+              goldLight: '#f59e0b',
+              surface: '#ffffff',
+              muted: '#64748b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <!-- Vendor Libraries: SheetJS for Excel and Chart.js for Analytics -->
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <!-- Top Header Navigation -->
+  <header class="top-header px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center font-black text-slate-900 text-lg shadow-md tracking-wider">
+          ESC
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-extrabold tracking-tight text-white uppercase">El Salvador City Motorpool</h1>
+            <span class="brand-badge">CITY MOTORPOOL</span>
+          </div>
+          <p class="text-xs text-slate-300 font-medium">City Engineering Office &bull; Heavy Equipment Maintenance Division</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <!-- Export to Excel Button with Dropdown -->
+        <div class="relative inline-block text-left" id="excelDropdownContainer">
+          <button id="btnExportExcelMain" onclick="app.exportFullExcelReport()" class="btn-excel px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+              <path d="M8 12h8v2H8zm0 3h8v2H8zm0-6h5v2H8z"/>
+            </svg>
+            <span>Export to Excel (.xlsx)</span>
+          </button>
+        </div>
+
+        <button onclick="app.openNewLogModal()" class="btn-industrial-primary px-4 py-2 rounded-lg text-sm flex items-center gap-1.5">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+          </svg>
+          <span>Log Maintenance</span>
+        </button>
+
+        <button onclick="app.openNewEquipmentModal()" class="btn-secondary px-3.5 py-2 rounded-lg text-sm flex items-center gap-1.5">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
+          </svg>
+          <span>Add Equipment</span>
+        </button>
+
+        <button onclick="app.openSuppliersModal()" class="btn-secondary px-3 py-2 rounded-lg text-sm flex items-center gap-1.5" title="Manage Heavy Equipment Parts Suppliers">
+          <svg class="w-4 h-4 fill-current text-blue-600" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+          <span>Suppliers</span>
+        </button>
+
+        <button onclick="app.openOperatorsModal()" class="btn-secondary px-3 py-2 rounded-lg text-sm flex items-center gap-1.5" title="Manage Municipal Equipment Operators">
+          <svg class="w-4 h-4 fill-current text-amber-600" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+          <span>Operators</span>
+        </button>
+
+        <!-- Settings / Database Menu -->
+        <div class="relative">
+          <button onclick="app.toggleSettingsMenu()" class="btn-secondary px-3 py-2 rounded-lg text-sm flex items-center" title="Data Backup & Demo Options">
+            <svg class="w-4 h-4 fill-current text-slate-500" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <div id="settingsDropdown" class="hidden absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-lg shadow-xl py-1 z-50 text-sm">
+            <button onclick="app.backupDatabaseJSON()" class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Backup Database (JSON)</span>
+            </button>
+            <label class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2 cursor-pointer">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span>Restore Database (JSON)</span>
+              <input type="file" id="restoreFileInput" accept=".json" class="hidden" onchange="app.restoreDatabaseJSON(event)">
+            </label>
+            <button onclick="app.exportCurrentFilteredToCSV()" class="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2">
+              <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Export CSV (Current View)</span>
+            </button>
+            <div class="border-t border-slate-200 my-1"></div>
+            <button onclick="app.resetToDemoData()" class="w-full text-left px-4 py-2 hover:bg-rose-50 text-rose-700 flex items-center gap-2">
+              <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>Reset to Demo Fleet</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-6 pt-6">
+
+    <!-- KPI Metric Cards Grid -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div class="kpi-card border-blue">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Fleet Assets</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiTotalFleet" class="text-3xl font-extrabold text-slate-900">0</span>
+          <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Tracked</span>
+        </div>
+      </div>
+
+      <div class="kpi-card border-green">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Operational / Ready</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiOperational" class="text-3xl font-extrabold text-emerald-600">0</span>
+          <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">In Service</span>
+        </div>
+      </div>
+
+      <div class="kpi-card border-purple">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">In Shop / Repair</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiInShop" class="text-3xl font-extrabold text-purple-600">0</span>
+          <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Down</span>
+        </div>
+      </div>
+
+      <div class="kpi-card border-red">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">PM Alerts (Due / Late)</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiAlerts" class="text-3xl font-extrabold text-rose-600">0</span>
+          <span class="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Action Req</span>
+        </div>
+      </div>
+
+      <div class="kpi-card border-amber">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Repair Spend</span>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiTotalSpend" class="text-2xl font-extrabold text-amber-700">Php 0.00</span>
+          <span class="text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">All-Time</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-slate-200 mb-6 overflow-x-auto">
+      <button onclick="app.switchTab('overview')" id="tabBtnOverview" class="tab-btn active">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        <span>Equipment Status Overview</span>
+        <span id="tabBadgeOverview" class="ml-1 bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full border border-amber-300 font-bold">0</span>
+      </button>
+
+      <button onclick="app.switchTab('logs')" id="tabBtnLogs" class="tab-btn">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+        <span>Maintenance Work Orders</span>
+        <span id="tabBadgeLogs" class="ml-1 bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-full border border-slate-300">0</span>
+      </button>
+
+      <button onclick="app.switchTab('fleet')" id="tabBtnFleet" class="tab-btn">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/><path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/></svg>
+        <span>Fleet Cards</span>
+        <span id="tabBadgeFleet" class="ml-1 bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-full border border-slate-300">0</span>
+      </button>
+
+      <button onclick="app.switchTab('pmSchedule')" id="tabBtnPMSchedule" class="tab-btn">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+        <span>PM Alerts & Schedules</span>
+        <span id="tabBadgeAlerts" class="ml-1 bg-rose-100 text-rose-800 text-xs px-2 py-0.5 rounded-full border border-rose-300">0</span>
+      </button>
+
+      <button onclick="app.switchTab('analytics')" id="tabBtnAnalytics" class="tab-btn">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+        <span>Cost & Repair Analytics</span>
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 0: EQUIPMENT OPERATIONAL STATUS OVERVIEW -->
+    <!-- ========================================== -->
+    <div id="viewOverview" class="space-y-4">
+      <!-- Status Board Quick Filter Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <button onclick="app.filterOverviewByStatus('all')" id="pillStatusAll" class="px-3.5 py-1.5 rounded-lg font-bold bg-amber-100 text-amber-900 border border-amber-400 flex items-center gap-1.5 transition-all shadow-sm">
+          <span>All Equipment</span>
+          <span id="overviewCountAll" class="bg-amber-200 px-1.5 py-0.5 rounded text-[11px] font-mono font-bold">0</span>
+        </button>
+        <button onclick="app.filterOverviewByStatus('Operational')" id="pillStatusOperational" class="px-3 py-1.5 rounded-lg font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 flex items-center gap-1.5 transition-all">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Operational</span>
+          <span id="overviewCountOperational" class="text-emerald-600 font-bold font-mono">0</span>
+        </button>
+        <button onclick="app.filterOverviewByStatus('Due Soon')" id="pillStatusDueSoon" class="px-3 py-1.5 rounded-lg font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 flex items-center gap-1.5 transition-all">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>Due Soon</span>
+          <span id="overviewCountDueSoon" class="text-amber-600 font-bold font-mono">0</span>
+        </button>
+        <button onclick="app.filterOverviewByStatus('Overdue')" id="pillStatusOverdue" class="px-3 py-1.5 rounded-lg font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 flex items-center gap-1.5 transition-all">
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          <span>Overdue PM</span>
+          <span id="overviewCountOverdue" class="text-rose-600 font-bold font-mono">0</span>
+        </button>
+        <button onclick="app.filterOverviewByStatus('In Shop')" id="pillStatusInShop" class="px-3 py-1.5 rounded-lg font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 flex items-center gap-1.5 transition-all">
+          <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+          <span>In Shop / Repair</span>
+          <span id="overviewCountInShop" class="text-purple-600 font-bold font-mono">0</span>
+        </button>
+        <button onclick="app.filterOverviewByStatus('Grounded')" id="pillStatusGrounded" class="px-3 py-1.5 rounded-lg font-semibold bg-white text-slate-700 hover:text-slate-900 border border-slate-300 flex items-center gap-1.5 transition-all">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span>Grounded</span>
+          <span id="overviewCountGrounded" class="text-slate-500 font-bold font-mono">0</span>
+        </button>
+      </div>
+
+      <!-- Search & Filter Controls -->
+      <div class="bg-white border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-center flex-1 min-w-[260px] gap-2">
+          <div class="relative w-full">
+            <input type="text" id="overviewSearchInput" oninput="app.renderOverview()" placeholder="Filter equipment by Unit #, make, model, serial, site, operator..." class="form-input pl-9 text-sm">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+        </div>
+
+        <div class="flex items-center flex-wrap gap-2 text-sm">
+          <select id="overviewFilterType" onchange="app.renderOverview()" class="form-select text-xs py-2 w-36">
+            <option value="">All Categories</option>
+          </select>
+
+          <select id="overviewFilterSite" onchange="app.renderOverview()" class="form-select text-xs py-2 w-48">
+            <option value="">All Project Sites</option>
+          </select>
+
+          <button onclick="app.resetOverviewFilters()" class="btn-secondary px-3 py-2 rounded-md text-xs font-semibold" title="Clear Filters">
+            Reset
+          </button>
+
+          <button onclick="app.exportOverviewExcel()" class="btn-excel px-3 py-2 rounded-md text-xs flex items-center gap-1.5 font-bold" title="Export this fleet status overview to Excel">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/><path d="M8 12h8v2H8zm0 3h8v2H8zm0-6h5v2H8z"/></svg>
+            <span>Export Overview (.xlsx)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Master Equipment Status Overview Table -->
+      <div class="table-container">
+        <div class="overflow-x-auto max-h-[640px]">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Asset Unit #</th>
+                <th>Equipment Specifications</th>
+                <th>Category</th>
+                <th>Operational Status & Quick Toggle</th>
+                <th>Hour Meter (SMU)</th>
+                <th>Next Service Target</th>
+                <th>Job Site Location</th>
+                <th>Assigned Operator</th>
+                <th class="text-right">Total Repair Cost</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="overviewTableBody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+        <!-- Overview Table Footer -->
+        <div class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex items-center justify-between text-xs text-slate-500">
+          <span id="overviewCountFooter">Showing 0 of 0 equipment units</span>
+          <div class="flex items-center gap-4 font-mono">
+            <span>Operational: <strong id="overviewFooterOp" class="text-emerald-600">0</strong></span>
+            <span>Alerts / In Shop: <strong id="overviewFooterAlerts" class="text-rose-600">0</strong></span>
+            <span>Fleet Total Operating: <strong id="overviewFooterHours" class="text-blue-700 font-bold">0 hrs</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: MAINTENANCE WORK ORDERS VIEW -->
+    <!-- ========================================== -->
+    <div id="viewLogs" class="hidden space-y-4">
+      <!-- Search & Filter Controls -->
+      <div class="bg-white border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-center flex-1 min-w-[260px] gap-2">
+          <div class="relative w-full">
+            <input type="text" id="logSearchInput" oninput="app.filterLogs()" placeholder="Search by WO#, equipment, technician, parts..." class="form-input pl-9 text-sm">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+        </div>
+
+        <div class="flex items-center flex-wrap gap-2 text-sm">
+          <select id="logFilterType" onchange="app.filterLogs()" class="form-select text-xs py-2 w-36">
+            <option value="">All Service Types</option>
+            <option value="PM Service">PM Service</option>
+            <option value="Breakdown Repair">Breakdown Repair</option>
+            <option value="Routine Inspection">Routine Inspection</option>
+            <option value="Safety Certification">Safety Certification</option>
+          </select>
+
+          <select id="logFilterStatus" onchange="app.filterLogs()" class="form-select text-xs py-2 w-32">
+            <option value="">All Statuses</option>
+            <option value="Completed">Completed</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Waiting on Parts">Waiting on Parts</option>
+          </select>
+
+          <select id="logFilterEquipment" onchange="app.filterLogs()" class="form-select text-xs py-2 w-44">
+            <option value="">All Machines</option>
+            <!-- Dynamically populated -->
+          </select>
+
+          <select id="logFilterSupplier" onchange="app.filterLogs()" class="form-select text-xs py-2 w-48">
+            <option value="">All Parts Suppliers</option>
+            <!-- Dynamically populated -->
+          </select>
+
+          <button onclick="app.resetLogFilters()" class="btn-secondary px-3 py-2 rounded-md text-xs font-semibold" title="Clear Filters">
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Logs Table -->
+      <div class="table-container">
+        <div class="overflow-x-auto max-h-[600px]">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>WO # & Date</th>
+                <th>Heavy Equipment</th>
+                <th>Hour Meter</th>
+                <th>Type & Priority</th>
+                <th>Work Summary, Parts & Supplier</th>
+                <th>Technician</th>
+                <th>Repair Cost (Php)</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        <!-- Table Footer Info -->
+        <div class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex items-center justify-between text-xs text-slate-500">
+          <span id="logCountFooter">Showing 0 of 0 records</span>
+          <div class="flex items-center gap-4">
+            <span id="logFooterPartsCost" class="hidden"></span>
+            <span id="logFooterLaborCost" class="hidden"></span>
+            <span>Total Filtered Repair Spend: <strong id="logFooterTotalCost" class="text-blue-700 font-bold text-sm">Php 0.00</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: FLEET INVENTORY VIEW -->
+    <!-- ========================================== -->
+    <div id="viewFleet" class="hidden space-y-4">
+      <div class="bg-white border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div class="relative w-72">
+          <input type="text" id="fleetSearchInput" oninput="app.renderFleet()" placeholder="Search fleet by ID, make, model, site..." class="form-input pl-9 text-sm">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <select id="fleetFilterType" onchange="app.renderFleet()" class="form-select text-xs py-2 w-44">
+            <option value="">All Equipment Types</option>
+            <!-- Populated dynamically -->
+          </select>
+          <select id="fleetFilterStatus" onchange="app.renderFleet()" class="form-select text-xs py-2 w-36">
+            <option value="">All Statuses</option>
+            <option value="Operational">Operational</option>
+            <option value="Due Soon">Due Soon</option>
+            <option value="Overdue">Overdue</option>
+            <option value="In Shop">In Shop</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fleet Grid Cards -->
+      <div id="fleetCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Dynamically rendered equipment cards -->
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: PM ALERTS & SCHEDULES VIEW -->
+    <!-- ========================================== -->
+    <div id="viewPMSchedule" class="hidden space-y-4">
+      <div class="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+        <h3 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+          <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Preventive Maintenance (PM) Alert Center</span>
+        </h3>
+        <p class="text-sm text-slate-500">
+          Heavy equipment service intervals are calculated using both <strong>Operating Engine Hours (SMU)</strong> and calendar triggers. Machines flagged in red have exceeded their preventive maintenance schedule and require immediate workshop attention.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" id="pmAlertsList">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: COST & REPAIR ANALYTICS VIEW -->
+    <!-- ========================================== -->
+    <div id="viewAnalytics" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Chart 1: Maintenance Spend by Machine -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+            <span>Total Maintenance & Repair Spend by Machine (Php)</span>
+          </h3>
+          <div class="h-64 relative">
+            <canvas id="chartMachineSpend"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Cost Breakdown by Maintenance Type -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+            <span>Expenditure by Service Type (Php)</span>
+          </h3>
+          <div class="h-64 relative">
+            <canvas id="chartTypeSpend"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cost Summary Table -->
+      <div class="table-container">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Fleet Operating & Repair Cost Breakdown</h4>
+          <button onclick="app.exportFullExcelReport()" class="btn-secondary px-3 py-1.5 rounded text-xs flex items-center gap-1 font-semibold">
+            <svg class="w-3.5 h-3.5 text-emerald-600 fill-current" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+            <span>Download in Excel (.xlsx)</span>
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Asset Unit</th>
+                <th>Current Hours</th>
+                <th>Work Orders</th>
+                <th>Breakdown Repairs</th>
+                <th>PM Services</th>
+                <th>Total Repair Spend (Php)</th>
+                <th>Cost / Op Hour (Php)</th>
+              </tr>
+            </thead>
+            <tbody id="analyticsSummaryTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT MAINTENANCE WORK ORDER   -->
+  <!-- ========================================== -->
+  <div id="logModal" class="modal-overlay">
+    <div class="modal-content p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h3 id="logModalTitle" class="text-lg font-bold text-slate-900">New Maintenance Work Order</h3>
+          <p class="text-xs text-slate-500">Log preventive service, field repair, or scheduled inspection</p>
+        </div>
+        <button onclick="app.closeModal('logModal')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="logForm" onsubmit="app.saveMaintenanceLog(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="logEditId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="form-label">Work Order #</label>
+            <input type="text" id="logFormId" required class="form-input font-mono text-sm" placeholder="WO-ESC-2026-016">
+          </div>
+          <div>
+            <label class="form-label">Date Performed</label>
+            <input type="date" id="logFormDate" required class="form-input text-sm">
+          </div>
+          <div>
+            <label class="form-label">Hour Meter Reading</label>
+            <input type="number" id="logFormMeterHours" required min="0" step="1" class="form-input text-sm font-mono" placeholder="e.g. 2480">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Equipment Asset</label>
+            <select id="logFormEquipment" required onchange="app.onLogEquipmentSelected()" class="form-select text-sm">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Service Type</label>
+            <select id="logFormType" required class="form-select text-sm">
+              <option value="PM Service">PM Service (Preventive Maintenance)</option>
+              <option value="Breakdown Repair">Breakdown Repair (Unscheduled)</option>
+              <option value="Routine Inspection">Routine Walkaround Inspection</option>
+              <option value="Safety Certification">Safety / Annual Certification</option>
+              <option value="Wear Part Replacement">Wear Part Replacement (Teeth, Blades)</option>
+              <option value="Fluid / Filter Change">Fluid / Filter Change</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Priority</label>
+            <select id="logFormPriority" class="form-select text-sm">
+              <option value="Low">Low (Routine)</option>
+              <option value="Medium" selected>Medium (Standard)</option>
+              <option value="High">High (Impending Failure)</option>
+              <option value="Urgent">Urgent (Machine Grounded)</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Work Order Status</label>
+            <select id="logFormStatus" class="form-select text-sm">
+              <option value="Completed" selected>Completed</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Waiting on Parts">Waiting on Parts</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Work Summary (Brief Headline)</label>
+          <input type="text" id="logFormSummary" required class="form-input text-sm" placeholder="e.g. 500-Hour Engine Oil & Hydraulic Filter Service">
+        </div>
+
+        <div>
+          <label class="form-label">Detailed Work Description / Diagnostics</label>
+          <textarea id="logFormDetails" rows="3" class="form-textarea text-sm" placeholder="Explain technical procedures performed, fault codes cleared, torque specs, fluid levels checked..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Parts & Consumables Used</label>
+            <input type="text" id="logFormPartsUsed" class="form-input text-sm" placeholder="e.g. Cat 1R-1808 Filter, 30L 15W-40 Oil, 1x Seal kit">
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="form-label mb-0">Parts Supplier</label>
+              <button type="button" onclick="app.quickAddSupplier()" class="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                <span>+ Add Supplier</span>
+              </button>
+            </div>
+            <select id="logFormSupplier" class="form-select text-sm">
+              <option value="">-- Select Parts Supplier (Optional) --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Single Direct Repair Cost in Philippine Peso (Labor Cost Removed) -->
+        <div class="bg-blue-50/80 p-4 rounded-lg border border-blue-200">
+          <label class="form-label text-blue-900 font-bold mb-1">Repair Cost (Php) *</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-2.5 text-sm font-bold text-slate-500 font-mono">Php</span>
+            <input type="number" id="logFormRepairCost" required min="0" step="0.01" class="form-input pl-14 text-base font-bold text-blue-950 font-mono" placeholder="0.00">
+          </div>
+          <p class="text-xs text-slate-500 mt-1.5">Direct municipal work order or vendor repair cost in Philippine Pesos (includes parts and repair services).</p>
+        </div>
+        <!-- Hidden legacy compatibility holders -->
+        <input type="hidden" id="logFormLaborHours" value="0">
+        <input type="hidden" id="logFormLaborRate" value="0">
+        <input type="hidden" id="logFormPartsCost" value="0">
+        <input type="hidden" id="logFormTotalCost" value="0">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Technician / Lead Mechanic</label>
+            <input type="text" id="logFormTechnician" class="form-input text-sm" placeholder="e.g. Mario De Leon">
+          </div>
+          <div>
+            <label class="form-label">Service Shop / Contractor</label>
+            <input type="text" id="logFormContractor" class="form-input text-sm" placeholder="e.g. El Salvador City Motorpool Bay">
+          </div>
+        </div>
+
+        <!-- PM Recurrence Sync -->
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-wrap items-center gap-4">
+          <div class="flex-1 min-w-[200px]">
+            <label class="form-label">Next Service Due Meter (Hours)</label>
+            <input type="number" id="logFormNextHours" min="0" class="form-input text-sm font-mono" placeholder="Auto-calculated or custom">
+          </div>
+          <div class="flex-1 min-w-[200px]">
+            <label class="form-label">Next Service Due Date</label>
+            <input type="date" id="logFormNextDate" class="form-input text-sm">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button type="button" onclick="app.closeModal('logModal')" class="btn-secondary px-4 py-2 rounded-lg text-sm">Cancel</button>
+          <button type="submit" class="btn-industrial-primary px-5 py-2 rounded-lg text-sm">Save Work Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT EQUIPMENT ASSET          -->
+  <!-- ========================================== -->
+  <div id="equipmentModal" class="modal-overlay">
+    <div class="modal-content p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h3 id="equipmentModalTitle" class="text-lg font-bold text-slate-900">Add Heavy Equipment Asset</h3>
+          <p class="text-xs text-slate-500">Register new machine to the city motorpool fleet</p>
+        </div>
+        <button onclick="app.closeModal('equipmentModal')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="equipmentForm" onsubmit="app.saveEquipment(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="equipmentEditId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Asset ID / Unit #</label>
+            <input type="text" id="eqFormId" required class="form-input font-mono text-sm" placeholder="e.g. ESC-EQ-008">
+          </div>
+          <div>
+            <label class="form-label">Equipment Name / Label</label>
+            <input type="text" id="eqFormName" required class="form-input text-sm" placeholder="e.g. CAT 336 Heavy Excavator">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="form-label">Equipment Type</label>
+            <select id="eqFormType" required class="form-select text-sm">
+              <!-- Dynamically populated from EQUIPMENT_TYPES -->
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Manufacturer / Make</label>
+            <input type="text" id="eqFormMake" required class="form-input text-sm" placeholder="e.g. Caterpillar">
+          </div>
+          <div>
+            <label class="form-label">Model</label>
+            <input type="text" id="eqFormModel" required class="form-input text-sm" placeholder="e.g. 336 GC">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="form-label">Serial / VIN #</label>
+            <input type="text" id="eqFormSerial" class="form-input font-mono text-sm" placeholder="e.g. CAT0336X99120">
+          </div>
+          <div>
+            <label class="form-label">Year of Manufacture</label>
+            <input type="number" id="eqFormYear" min="1970" max="2035" value="2022" class="form-input text-sm">
+          </div>
+          <div>
+            <label class="form-label">Current Meter (Hours)</label>
+            <input type="number" id="eqFormCurrentHours" required min="0" step="1" class="form-input text-sm font-mono" placeholder="e.g. 1200">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">PM Service Interval (Hours)</label>
+            <input type="number" id="eqFormPMInterval" min="50" step="50" value="250" class="form-input text-sm font-mono" placeholder="Standard is 250h">
+          </div>
+          <div>
+            <label class="form-label">Next Service Due (Hours)</label>
+            <input type="number" id="eqFormNextHours" min="0" step="1" class="form-input text-sm font-mono" placeholder="e.g. 1450">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Project Site / Current Location</label>
+            <input type="text" id="eqFormLocation" class="form-input text-sm" placeholder="e.g. Barangay Molugan Coastal Dike">
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="form-label mb-0">Assigned Operator</label>
+              <button type="button" onclick="app.quickAddOperator()" class="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                <span>+ Add Operator</span>
+              </button>
+            </div>
+            <select id="eqFormOperator" class="form-select text-sm">
+              <option value="">-- Select Assigned Operator --</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Equipment Status</label>
+          <select id="eqFormStatus" class="form-select text-sm">
+            <option value="Operational">Operational (Ready for work)</option>
+            <option value="Due Soon">Due Soon (Service interval approaching)</option>
+            <option value="Overdue">Overdue (Exceeded service interval)</option>
+            <option value="In Shop">In Shop (Active repair)</option>
+            <option value="Grounded">Grounded (Safety hazard / Out of commission)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">Notes, Attachments & Specs</label>
+          <textarea id="eqFormNotes" rows="2" class="form-textarea text-sm" placeholder="Attachments (breaker, bucket), tire sizes, telematics link..."></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button type="button" onclick="app.closeModal('equipmentModal')" class="btn-secondary px-4 py-2 rounded-lg text-sm">Cancel</button>
+          <button type="submit" class="btn-industrial-primary px-5 py-2 rounded-lg text-sm">Save Asset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: QUICK UPDATE METER HOURS            -->
+  <!-- ========================================== -->
+  <div id="quickMeterModal" class="modal-overlay">
+    <div class="modal-content max-w-md p-6">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Log Current Operating Hours</h3>
+          <p id="quickMeterSubtitle" class="text-xs text-slate-500">Update SMU engine hour meter</p>
+        </div>
+        <button onclick="app.closeModal('quickMeterModal')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="quickMeterForm" onsubmit="app.saveQuickMeter(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="quickMeterEquipmentId">
+
+        <div>
+          <label class="form-label">Previous Logged Hours</label>
+          <input type="text" id="quickMeterPrevHours" readonly class="form-input bg-slate-100 text-slate-600 text-sm font-mono">
+        </div>
+
+        <div>
+          <label class="form-label">New Hour Meter Reading</label>
+          <input type="number" id="quickMeterNewHours" required min="0" step="1" class="form-input text-lg font-mono font-bold text-blue-900">
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button type="button" onclick="app.closeModal('quickMeterModal')" class="btn-secondary px-4 py-2 rounded-lg text-sm">Cancel</button>
+          <button type="submit" class="btn-industrial-primary px-5 py-2 rounded-lg text-sm">Update Hours</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: EQUIPMENT DETAIL & REPAIR HISTORY   -->
+  <!-- ========================================== -->
+  <div id="equipmentDetailModal" class="modal-overlay">
+    <div class="modal-content max-w-5xl p-6">
+      <!-- Modal Header -->
+      <div class="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span id="eqDetailId" class="font-mono font-bold text-blue-900 text-sm bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">ESC-EQ-000</span>
+            <span id="eqDetailType" class="text-xs uppercase tracking-wider font-semibold text-slate-500">Excavator</span>
+            <span id="eqDetailStatusBadge"></span>
+          </div>
+          <h2 id="eqDetailName" class="text-2xl font-black text-slate-900">Equipment Name</h2>
+          <p id="eqDetailSubtitle" class="text-xs text-slate-500 mt-0.5 font-medium">Make &bull; Model &bull; Year &bull; Serial</p>
+        </div>
+
+        <div class="flex items-center flex-wrap gap-2">
+          <button id="btnExportEqExcel" onclick="app.exportCurrentEquipmentExcel()" class="btn-excel px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 font-bold" title="Download this machine's history in Excel">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/><path d="M8 12h8v2H8zm0 3h8v2H8zm0-6h5v2H8z"/></svg>
+            <span>Export History (.xlsx)</span>
+          </button>
+
+          <button onclick="app.printEquipmentDossier()" class="btn-secondary px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 font-semibold text-slate-700" title="Print equipment dossier">
+            <svg class="w-3.5 h-3.5 fill-current text-slate-500" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/></svg>
+            <span>Print Dossier</span>
+          </button>
+
+          <button id="btnEqDetailService" class="btn-industrial-primary px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 font-bold">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            <span>Service This Unit</span>
+          </button>
+
+          <button onclick="app.closeModal('equipmentDetailModal')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold ml-2 leading-none">&times;</button>
+        </div>
+      </div>
+
+      <!-- Equipment Quick Metrics & Specs Grid -->
+      <div id="eqDetailProfileSheet" class="mt-4 space-y-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Operating Hours</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="eqDetailHours" class="text-lg font-mono font-black text-slate-900">0</span>
+              <span class="text-[10px] text-slate-500">hrs</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Next Service Target</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="eqDetailNextDue" class="text-lg font-mono font-black text-amber-600">0</span>
+              <span class="text-[10px] text-slate-500">hrs</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Total Services</span>
+            <span id="eqDetailTotalServices" class="text-lg font-mono font-black text-blue-600 block mt-0.5">0</span>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Breakdown Repairs</span>
+            <span id="eqDetailBreakdowns" class="text-lg font-mono font-black text-rose-600 block mt-0.5">0</span>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Lifetime Spend</span>
+            <span id="eqDetailLifetimeSpend" class="text-lg font-mono font-black text-emerald-600 block mt-0.5">Php 0.00</span>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Cost / Op Hour</span>
+            <span id="eqDetailCostPerHour" class="text-lg font-mono font-black text-blue-700 block mt-0.5">Php 0.00/hr</span>
+          </div>
+        </div>
+
+        <!-- Specifications & Operational Info Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+          <div class="space-y-1.5 font-mono">
+            <div class="flex justify-between"><span class="text-slate-500">Job Site / Location:</span> <strong id="eqDetailLocation" class="text-slate-800">Site</strong></div>
+            <div class="flex justify-between"><span class="text-slate-500">Assigned Operator:</span> <strong id="eqDetailOperator" class="text-slate-800">Operator</strong></div>
+            <div class="flex justify-between"><span class="text-slate-500">Serial / VIN:</span> <span id="eqDetailSerialVal" class="text-slate-700 font-bold">N/A</span></div>
+          </div>
+          <div class="space-y-1.5 font-mono">
+            <div class="flex justify-between"><span class="text-slate-500">Standard PM Interval:</span> <span id="eqDetailInterval" class="text-slate-800">250 hrs</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Last Service Date:</span> <span id="eqDetailLastDate" class="text-slate-700">N/A</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Notes / Attachments:</span> <span id="eqDetailNotes" class="text-slate-700 truncate max-w-[200px]">None</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History of Repairs Section -->
+      <div class="mt-6">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Maintenance & Repair History Log</span>
+            </h3>
+            <span id="eqDetailHistoryCount" class="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-full border border-slate-300">0 events</span>
+          </div>
+
+          <!-- History Filter Buttons -->
+          <div class="flex items-center gap-1 text-xs">
+            <button onclick="app.filterEquipmentHistory('all')" id="btnHistFilterAll" class="px-2.5 py-1 rounded font-semibold bg-amber-100 text-amber-900 border border-amber-400">All</button>
+            <button onclick="app.filterEquipmentHistory('Breakdown Repair')" id="btnHistFilterBreakdown" class="px-2.5 py-1 rounded font-semibold bg-white text-slate-600 hover:text-slate-900 border border-slate-300">Breakdowns</button>
+            <button onclick="app.filterEquipmentHistory('PM Service')" id="btnHistFilterPM" class="px-2.5 py-1 rounded font-semibold bg-white text-slate-600 hover:text-slate-900 border border-slate-300">PMs</button>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="table-container max-h-[380px] overflow-y-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date & WO #</th>
+                <th>Meter (Hrs)</th>
+                <th>Type & Priority</th>
+                <th>Work Performed & Details</th>
+                <th>Parts Replaced</th>
+                <th>Technician</th>
+                <th>Repair Cost (Php)</th>
+                <th>Status</th>
+                <th class="text-right">Ticket</th>
+              </tr>
+            </thead>
+            <tbody id="eqDetailHistoryTableBody">
+              <!-- Dynamically populated with history of this machine -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PRINTABLE WORK ORDER / TICKET       -->
+  <!-- ========================================== -->
+  <div id="workOrderModal" class="modal-overlay">
+    <div class="modal-content max-w-3xl p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200 no-print">
+        <div class="flex items-center gap-2">
+          <span class="brand-badge">WORK ORDER</span>
+          <span id="printModalWoNumber" class="font-mono font-bold text-slate-900 text-base">WO-ESC-XXXX-XXX</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="btn-industrial-primary px-4 py-1.5 rounded text-xs flex items-center gap-1.5 font-bold">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/></svg>
+            <span>Print Work Order</span>
+          </button>
+          <button onclick="app.closeModal('workOrderModal')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold ml-2">&times;</button>
+        </div>
+      </div>
+
+      <!-- Printable Content Sheet -->
+      <div id="printSheetContent" class="printable-card mt-4 p-6 bg-white rounded-lg text-slate-900 space-y-6 border border-slate-200">
+        <!-- Dynamically injected printable content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: MANAGE PARTS SUPPLIERS              -->
+  <!-- ========================================== -->
+  <div id="suppliersModal" class="modal-overlay">
+    <div class="modal-content max-w-4xl p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-600 fill-current" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+            <span>Heavy Equipment Parts Suppliers</span>
+          </h3>
+          <p class="text-xs text-slate-500">Directory of approved parts vendors, OEM dealers, and heavy machinery parts supply</p>
+        </div>
+        <button onclick="app.closeModal('suppliersModal')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- Add New Supplier Form -->
+      <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <h4 class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+          <span>Register New Parts Supplier</span>
+        </h4>
+        <form id="supplierForm" onsubmit="app.saveSupplier(event)" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="form-label text-[11px]">Supplier / Company Name *</label>
+              <input type="text" id="supFormName" required class="form-input text-xs" placeholder="e.g. Monark Equipment Corp.">
+            </div>
+            <div>
+              <label class="form-label text-[11px]">Contact Person</label>
+              <input type="text" id="supFormContact" class="form-input text-xs" placeholder="e.g. Patrick Alcantara">
+            </div>
+            <div>
+              <label class="form-label text-[11px]">Contact Phone / Mobile</label>
+              <input type="text" id="supFormPhone" class="form-input text-xs" placeholder="e.g. 0917-810-4491">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="form-label text-[11px]">Store / Office Address</label>
+              <input type="text" id="supFormAddress" class="form-input text-xs" placeholder="e.g. National Highway, Kauswagan, CDO">
+            </div>
+            <div>
+              <label class="form-label text-[11px]">Specialty / Parts Supplied</label>
+              <input type="text" id="supFormSpecialty" class="form-input text-xs" placeholder="e.g. Caterpillar OEM Filters, Hydraulic Hoses & Seals">
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-1">
+            <button type="submit" class="btn-industrial-primary px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+              <span>Save Supplier</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Suppliers List Table -->
+      <div class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Registered Suppliers (<span id="suppliersCount">0</span>)</span>
+        </div>
+        <div class="table-container max-h-[300px] overflow-y-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Company Name</th>
+                <th>Contact Person</th>
+                <th>Phone / Contact</th>
+                <th>Location / Address</th>
+                <th>Parts Specialty</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="suppliersTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: MANAGE EQUIPMENT OPERATORS          -->
+  <!-- ========================================== -->
+  <div id="operatorsModal" class="modal-overlay">
+    <div class="modal-content max-w-4xl p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-600 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+            <span>Municipal Heavy Equipment Operators</span>
+          </h3>
+          <p class="text-xs text-slate-500">Roster of certified TESDA/DOLE operators assigned to city heavy machinery</p>
+        </div>
+        <button onclick="app.closeModal('operatorsModal')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- Add New Operator Form -->
+      <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <h4 class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+          <span>Register New Equipment Operator</span>
+        </h4>
+        <form id="operatorForm" onsubmit="app.saveOperator(event)" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="form-label text-[11px]">Full Name *</label>
+              <input type="text" id="opFormName" required class="form-input text-xs" placeholder="e.g. Danilo Ramos">
+            </div>
+            <div>
+              <label class="form-label text-[11px]">Contact Phone</label>
+              <input type="text" id="opFormPhone" class="form-input text-xs" placeholder="e.g. 0917-432-8812">
+            </div>
+            <div>
+              <label class="form-label text-[11px]">License / ID Number</label>
+              <input type="text" id="opFormLicense" class="form-input text-xs font-mono" placeholder="e.g. HEO-EX-2021-0492">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="form-label text-[11px]">TESDA / NC II Certification</label>
+              <input type="text" id="opFormCert" class="form-input text-xs" placeholder="e.g. NC II - Hydraulic Excavator">
+            </div>
+            <div>
+              <label class="form-label text-[11px]">Primary Assigned Equipment</label>
+              <select id="opFormUnit" class="form-select text-xs">
+                <option value="Unassigned">Unassigned (Relief Operator)</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-1">
+            <button type="submit" class="btn-industrial-primary px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+              <span>Save Operator</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Operators List Table -->
+      <div class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Active Operators (<span id="operatorsCount">0</span>)</span>
+        </div>
+        <div class="table-container max-h-[300px] overflow-y-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Operator Name</th>
+                <th>Certification Title</th>
+                <th>License / ID #</th>
+                <th>Contact Phone</th>
+                <th>Assigned Unit</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="operatorsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Application Logic Scripts -->
+  <script src="demo-data.js"></script>
+  <script src="export-excel.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
